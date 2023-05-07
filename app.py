@@ -1,33 +1,48 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import requests
 
-# API function to get carbon emissions
-def get_carbon_emissions(distance, mode):
-    url = 'https://www.carboninterface.com/api/v1/estimates'
-    headers = {'Authorization': 'Bearer SKrsfaLPFAhVv3yz6e2IIg'}
-    payload = {
-        'type': 'car',
-        'distance_unit': 'kilometers',
-        'distance_value': distance
-    }
+def calculate_car_emissions(distance, num_days):
+    # Average CO2 emissions per km for a car
+    CO2_PER_KM = 0.1808
+    # Average distance driven per day for a car
+    AVG_DISTANCE_PER_DAY = 40.0
 
-    if mode == 'Car':
-        payload['type'] = 'car'
-    elif mode == 'Motorcycle':
-        payload['type'] = 'motorcycle'
-    elif mode == 'Public transportation':
-        payload['type'] = 'bus'
+    # Calculate the total distance driven
+    total_distance = distance * num_days
 
-    response = requests.post(url, headers=headers, json=payload)
-    data = response.json()
+    # Calculate the carbon emissions
+    carbon_emissions = (total_distance / AVG_DISTANCE_PER_DAY) * CO2_PER_KM
 
-    if 'data' in data:
-        carbon_emissions = data['data']['attributes']['carbon_kg']
-        return carbon_emissions
-    else:
-        return None
+    return carbon_emissions
+
+
+def calculate_motorcycle_emissions(distance, num_days):
+    # Average CO2 emissions per km for a motorcycle
+    CO2_PER_KM = 0.129
+
+    # Calculate the total distance driven
+    total_distance = distance * num_days
+
+    # Calculate the carbon emissions
+    carbon_emissions = total_distance * CO2_PER_KM
+
+    return carbon_emissions
+
+
+def calculate_public_trans_emissions(distance, num_days):
+    # Average CO2 emissions per km for public transportation
+    CO2_PER_KM = 0.09
+
+    # Calculate the total distance traveled
+    total_distance = distance * num_days
+
+    # Calculate the carbon emissions
+    carbon_emissions = total_distance * CO2_PER_KM
+
+    return carbon_emissions
+
+
 
 # Set up the app title and description
 st.title('GoEco')
@@ -36,7 +51,7 @@ st.write('Welcome to our app that helps you calculate your carbon footprint from
 # Create input fields for users to enter commute details
 st.header('Enter your commute details:')
 data = []
-transportation_modes = ['Car', 'Motorcycle', 'Public transportation', 'Bicycle', 'Walking']
+transportation_modes = ['Car', 'Motorcycle', 'Public transportation']
 total_emissions = 0
 
 for mode in transportation_modes:
@@ -44,40 +59,47 @@ for mode in transportation_modes:
     distance = st.number_input(f'Distance (in km) for {mode}:', min_value=0.0, max_value=500.0, step=0.1, key=f'{mode}_distance')
     num_days = st.number_input(f'Number of days per week for {mode}:', min_value=1, max_value=7, step=1, key=f'{mode}_days')
 
-    carbon_emissions = get_carbon_emissions(distance, mode)
+    if mode == 'Car':
+        carbon_emissions = calculate_car_emissions(distance, num_days)
+    elif mode == 'Motorcycle':
+        carbon_emissions = calculate_motorcycle_emissions(distance, num_days)
+    elif mode == 'Public transportation':
+        carbon_emissions = calculate_public_trans_emissions(distance, num_days)
+   
 
-    if carbon_emissions is not None:
-        total_emissions += carbon_emissions
-        data.append({'Transportation Mode': mode, 'CO2 Emissions (kg)': carbon_emissions})
-    else:
-        st.write(f'Error retrieving carbon emissions for {mode}')
+    total_emissions += carbon_emissions
+    data.append({'Transportation Mode': mode, 'CO2 Emissions (kg)': carbon_emissions})
 
 # Display the total carbon emissions
 df = pd.DataFrame(data)
 st.header('Results:')
-st.write(f'Your total carbon emissions: {total_emissions:.2f} kg of CO2')
+st.title(f'Net carbon emissions: {total_emissions:.2f} kg of CO2')
+
+# Find the maximum emissions value
+max_emissions = max(data, key=lambda x: x['CO2 Emissions (kg)'])['CO2 Emissions (kg)']
 
 # Create a chart to show CO2 emissions by transportation mode
-if not df.empty:
-    fig, ax = plt.subplots()
-    ax.bar(df['Transportation Mode'], df['CO2 Emissions (kg)'])
-    ax.set_xlabel('Transportation Mode')
-    ax.set_ylabel('CO2 Emissions (kg)')
-    ax.set_title('CO2 Emissions by Transportation Mode')
+fig, ax = plt.subplots()
+ax.bar(df['Transportation Mode'], df['CO2 Emissions (kg)'])
+ax.set_xlabel('Transportation Mode')
+ax.set_ylabel('CO2 Emissions (kg)')
+ax.set_title('CO2 Emissions by Transportation Mode')
 
-    # Rotate x-axis labels for better readability
-    plt.xticks(rotation=45)
+# Rotate x-axis labels for better readability
+plt.xticks(rotation=45)
 
-    # Display the chart
-    st.pyplot(fig)
-else:
-    st.write('Carbon emissions data is not available.')
+# Set y-axis limits to include the maximum emissions value
+ax.set_ylim(0, max_emissions * 1.2)  # Adjust the multiplier (1.2) as needed for spacing
 
-# Provide recommendations for more sustainable transportation options
+# Display the chart
+st.pyplot(fig)
+
+
+ 
 st.header('Sustainable transportation recommendations:')
 if total_emissions > 0:
     st.write('Consider the following more sustainable transportation options:')
-    if 'Car' in df['Transportation Mode'].values or 'Motorcycle' in df['Transportation Mode'].values:
+    if 'Car' in total_emissions or 'Motorcycle' in total_emissions:
         st.write('- Use public transportation or carpooling when possible')
         st.write('- Switch to an electric vehicle')
     else:
@@ -87,6 +109,7 @@ else:
 
 # Add a footer with the data source and credits
 st.write('')
-st.write('')
-st.write('*Data sources: EPA Greenhouse Gas Equivalencies Calculator and National Public Transportation CO2 Emissions Calculator')
+
 st.write('This app was built by Yash Thapliyal and Laxya Kumar 2023')
+
+#green and white, blue
