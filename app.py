@@ -45,7 +45,7 @@ def calculate_public_trans_emissions(distance, num_days):
 
 
 # Set up the app title and description
-st.title('GoEco')
+st.title(':green[GoEco]')
 st.write('Welcome to our app that helps you calculate your carbon footprint from your daily commute and provides recommendations for more sustainable transportation options.')
 
 # Create input fields for users to enter commute details
