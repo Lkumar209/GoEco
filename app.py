@@ -49,7 +49,7 @@ st.title(':green[GoEco]')
 st.write('Welcome to our app that helps you calculate your carbon footprint from your daily commute and provides recommendations for more sustainable transportation options.')
 
 # Create input fields for users to enter commute details
-st.header('Enter your commute details:')
+st.header(':green[Enter your commute details:]')
 data = []
 transportation_modes = ['Car', 'Motorcycle', 'Public transportation']
 total_emissions = 0
@@ -73,7 +73,14 @@ for mode in transportation_modes:
 # Display the total carbon emissions
 df = pd.DataFrame(data)
 st.header('Results:')
-st.title(f'Net carbon emissions: {total_emissions:.2f} kg of CO2')
+
+if total_emissions > 10:
+    st.title(f'Net :red[carbon] :red[emissions]: :red[{total_emissions:.2f}] kg of CO2')
+else:
+    st.title(f'Net :green[carbon] :green[emissions]: :green[{total_emissions:.2f}] kg of CO2')
+
+
+
 
 # Find the maximum emissions value
 max_emissions = max(data, key=lambda x: x['CO2 Emissions (kg)'])['CO2 Emissions (kg)']
@@ -112,4 +119,4 @@ st.write('')
 
 st.write('This app was built by Yash Thapliyal and Laxya Kumar 2023')
 
-#green and white, blue
+ 
